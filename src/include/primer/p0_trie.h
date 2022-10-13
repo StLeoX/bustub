@@ -63,14 +63,7 @@ class TrieNode {
    * @param key_char Key char of child node.
    * @return True if this trie node has a child with given key, false otherwise.
    */
-  bool HasChild(char key_char) const {
-    try {
-      auto child = children_.at(key_char).get();
-      return child != nullptr;
-    } catch (...) {
-      return false;
-    }
-  }
+  bool HasChild(char key_char) const { return children_.find(key_char) != children_.cend(); }
 
   /**
    *
