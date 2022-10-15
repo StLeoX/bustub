@@ -121,6 +121,26 @@ class BufferPoolManagerInstance : public BufferPoolManager {
    */
   void ValidatePageId(page_id_t page_id) const;
 
+  /**
+   * Find page_id from page_table_.
+   * @param page_id
+   * @return frame_id
+   * */
+   frame_id_t FindPage(page_id_t page_id) const;
+
+   /**
+    * Find a fresh page_id from either the free list or the replacer.
+    * Always pick from the free list first.
+    * @return frame_id
+    * */
+    frame_id_t FindFreshPage();
+
+    /**
+     * Flush a page to disk.
+     * @param page_id
+     * */
+     void FlushPageReally(page_id_t page_id);
+
   /** Number of pages in the buffer pool. */
   const size_t pool_size_;
   /** How many instances are in the parallel BPM (if present, otherwise just 1 BPI) */

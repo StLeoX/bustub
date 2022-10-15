@@ -24,7 +24,7 @@ auto LRUReplacer::Victim(frame_id_t *frame_id) -> bool {
     return false;
   } else {
     *frame_id = lru_list_.front();
-    lru_list_.erase(lru_list_.cbegin());
+    lru_list_.pop_front();
     lru_map_.erase(*frame_id);
     return true;
   }
@@ -41,7 +41,7 @@ void LRUReplacer::Unpin(frame_id_t frame_id) {
   auto target = lru_map_.find(frame_id);
   if (target != lru_map_.cend()) return;
   lru_list_.push_back(frame_id);
-  lru_map_[frame_id] = --lru_list_.end(); // note: end() is the sentinel, so using --end()
+  lru_map_[frame_id] = --lru_list_.end();  // note: end() is the sentinel, so using --end()
   if (lru_list_.size() > lru_size_) {
     frame_id_t victim;
     assert(Victim(&victim));
