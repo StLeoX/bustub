@@ -97,6 +97,9 @@ auto BufferPoolManagerInstance::FetchPgImp(page_id_t page_id) -> Page * {
 
   frame_id_t available_frame = FindPage(page_id);
   if (available_frame != INVALID_PAGE_ID) {  // hit, use it
+    replacer_->Pin(available_frame);
+    pages_[available_frame].pin_count_++;
+    pages_[available_frame].is_dirty_ = true;
     return &pages_[available_frame];
   }
   available_frame = FindFreshPage();  // miss, alloc one
