@@ -119,9 +119,19 @@ class HashTableDirectoryPage {
   void IncrGlobalDepth();
 
   /**
+   * Grow the directory.
+   * */
+  void Grow();
+
+  /**
    * Decrement the global depth of the directory
    */
   void DecrGlobalDepth();
+
+  /**
+   * Shrink the directory.
+   * */
+  void Shrink();
 
   /**
    * @return true if the directory can be shrunk
@@ -169,7 +179,7 @@ class HashTableDirectoryPage {
    * @param bucket_idx bucket index to lookup
    * @return the high bit corresponding to the bucket's local depth
    */
-  auto GetLocalHighBit(uint32_t bucket_idx) -> uint32_t;
+  auto GetLocalHighBits(uint32_t bucket_idx) -> uint32_t;
 
   /**
    * VerifyIntegrity
@@ -190,7 +200,7 @@ class HashTableDirectoryPage {
   page_id_t page_id_;
   lsn_t lsn_;
   uint32_t global_depth_{0};
-  uint8_t local_depths_[DIRECTORY_ARRAY_SIZE];
+  uint8_t local_depths_[DIRECTORY_ARRAY_SIZE]{0};
   page_id_t bucket_page_ids_[DIRECTORY_ARRAY_SIZE];
 };
 

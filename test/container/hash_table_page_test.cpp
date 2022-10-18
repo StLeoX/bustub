@@ -23,7 +23,7 @@
 namespace bustub {
 
 // NOLINTNEXTLINE
-TEST(HashTablePageTest, DISABLED_DirectoryPageSampleTest) {
+TEST(HashTablePageTest, /*DISABLED_*/DirectoryPageSampleTest) {
   auto *disk_manager = new DiskManager("test.db");
   auto *bpm = new BufferPoolManagerInstance(5, disk_manager);
 

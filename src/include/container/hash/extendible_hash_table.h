@@ -129,7 +129,7 @@ class ExtendibleHashTable {
   auto FetchDirectoryPage() -> HashTableDirectoryPage *;
 
   /**
-   * Fetches the a bucket page from the buffer pool manager using the bucket's page_id.
+   * Fetches the bucket page from the buffer pool manager using the bucket's page_id.
    *
    * @param bucket_page_id the page_id to fetch
    * @return a pointer to a bucket page
@@ -137,7 +137,16 @@ class ExtendibleHashTable {
   auto FetchBucketPage(page_id_t bucket_page_id) -> HASH_TABLE_BUCKET_TYPE *;
 
   /**
+   * New a bucket page from the buffer pool manager using the bucket's page_id.
+   *
+   * @param bucket_page_id the page_id allocated
+   * @return a pointer to a bucket page
+   */
+  auto NewBucketPage(page_id_t *bucket_page_id) -> HASH_TABLE_BUCKET_TYPE *;
+
+  /**
    * Performs insertion with an optional bucket splitting.
+   * This is a recursive operation, since the image bucket could be full as well.
    *
    * @param transaction a pointer to the current transaction
    * @param key the key to insert
@@ -150,7 +159,7 @@ class ExtendibleHashTable {
    * Optionally merges an empty bucket into it's pair.  This is called by Remove,
    * if Remove makes a bucket empty.
    *
-   * There are three conditions under which we skip the merge:
+   * There are three situations under which we skip the merge:
    * 1. The bucket is no longer empty.
    * 2. The bucket has local depth 0.
    * 3. The bucket's local depth doesn't match its split image's local depth.
@@ -162,11 +171,11 @@ class ExtendibleHashTable {
   void Merge(Transaction *transaction, const KeyType &key, const ValueType &value);
 
   // member variables
-  page_id_t directory_page_id_;
+  page_id_t directory_page_id_;  // root
   BufferPoolManager *buffer_pool_manager_;
   KeyComparator comparator_;
 
-  // Readers includes inserts and removes, writers are splits and merges
+  // Readers include inserts and removes, writers are splits and merges
   ReaderWriterLatch table_latch_;
   HashFunction<KeyType> hash_fn_;
 };
