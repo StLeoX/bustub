@@ -17,16 +17,19 @@ namespace bustub {
 
 template <typename KeyType, typename ValueType, typename KeyComparator>
 auto HASH_TABLE_BLOCK_TYPE::KeyAt(slot_offset_t bucket_ind) const -> KeyType {
-  return {};
+  if (!IsReadable(bucket_ind)) return {};
+  return array_[bucket_ind].first;
 }
 
 template <typename KeyType, typename ValueType, typename KeyComparator>
 auto HASH_TABLE_BLOCK_TYPE::ValueAt(slot_offset_t bucket_ind) const -> ValueType {
-  return {};
+  if (!IsReadable(bucket_ind)) return {};
+  return array_[bucket_ind].second;
 }
 
 template <typename KeyType, typename ValueType, typename KeyComparator>
 auto HASH_TABLE_BLOCK_TYPE::Insert(slot_offset_t bucket_ind, const KeyType &key, const ValueType &value) -> bool {
+  UNREACHABLE("todo");
   return false;
 }
 
@@ -35,12 +38,14 @@ void HASH_TABLE_BLOCK_TYPE::Remove(slot_offset_t bucket_ind) {}
 
 template <typename KeyType, typename ValueType, typename KeyComparator>
 auto HASH_TABLE_BLOCK_TYPE::IsOccupied(slot_offset_t bucket_ind) const -> bool {
-  return false;
+  if (bucket_ind >= BLOCK_ARRAY_SIZE) return false;
+  return occupied_[bucket_ind / 8] >> (bucket_ind % 8) & 1;
 }
 
 template <typename KeyType, typename ValueType, typename KeyComparator>
 auto HASH_TABLE_BLOCK_TYPE::IsReadable(slot_offset_t bucket_ind) const -> bool {
-  return false;
+  if (bucket_ind >= BLOCK_ARRAY_SIZE) return false;
+  return readable_[bucket_ind / 8] >> (bucket_ind % 8) & 1;
 }
 
 // DO NOT REMOVE ANYTHING BELOW THIS LINE

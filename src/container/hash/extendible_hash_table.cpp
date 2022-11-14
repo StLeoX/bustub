@@ -42,7 +42,7 @@ HASH_TABLE_TYPE::ExtendibleHashTable(const std::string &name, BufferPoolManager 
   dir->SetBucketPageId(0, bucket0_page_id);
   dir->SetLocalDepth(0, 1);
   NewBucketPage(&bucket1_page_id);
-  dir->SetBucketPageId(1, bucket0_page_id);
+  dir->SetBucketPageId(1, bucket1_page_id);
   dir->SetLocalDepth(1, 1);
   dir->IncrGlobalDepth();
 

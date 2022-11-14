@@ -139,7 +139,7 @@ auto BufferPoolManagerInstance::UnpinPgImp(page_id_t page_id, bool is_dirty) -> 
 
   frame_id_t target_frame = FindPage(page_id);
   if (target_frame == INVALID_PAGE_ID || pages_[target_frame].GetPinCount() == 0) return false;
-  if (is_dirty) pages_[page_id].is_dirty_ = is_dirty;
+  if (is_dirty) pages_[target_frame].is_dirty_ = is_dirty;
   if (--pages_[target_frame].pin_count_ == 0) {
     replacer_->Unpin(target_frame);
     FlushPageReally(page_id);

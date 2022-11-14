@@ -57,6 +57,7 @@ TEST(HashTablePageTest, /*DISABLED_*/DirectoryPageSampleTest) {
 }
 
 // NOLINTNEXTLINE
+// basic Insert, Remove
 TEST(HashTablePageTest, /*DISABLED_*/ BucketPageSampleTest) {
   auto *disk_manager = new DiskManager("test.db");
   auto *bpm = new BufferPoolManagerInstance(5, disk_manager);
@@ -104,6 +105,66 @@ TEST(HashTablePageTest, /*DISABLED_*/ BucketPageSampleTest) {
     if (i % 2 == 1) {
       assert(!bucket_page->Remove(i, i, IntComparator()));
     }
+  }
+
+  // unpin the directory page now that we are done
+  bpm->UnpinPage(bucket_page_id, true, nullptr);
+  disk_manager->ShutDown();
+  remove("test.db");
+  delete disk_manager;
+  delete bpm;
+}
+
+// NOLINTNEXTLINE
+// allow inserting multi value for the same key, only if those values are different
+TEST(HashTablePageTest, /*DISABLED_*/ BucketPageSampleTest_MultiValue) {
+  auto *disk_manager = new DiskManager("test.db");
+  auto *bpm = new BufferPoolManagerInstance(5, disk_manager);
+
+  // get a bucket page from the BufferPoolManager
+  page_id_t bucket_page_id = INVALID_PAGE_ID;
+
+  auto bucket_page = reinterpret_cast<HashTableBucketPage<int, int, IntComparator> *>(
+      bpm->NewPage(&bucket_page_id, nullptr)->GetData());
+
+  // insert a few (key, value) pairs
+  for (unsigned i = 0; i < 10; i++) {
+    assert(bucket_page->Insert(i, i, IntComparator()));
+  }
+
+  // check for the inserted pairs
+  for (unsigned i = 0; i < 10; i++) {
+    EXPECT_EQ(i, bucket_page->KeyAt(i));
+    EXPECT_EQ(i, bucket_page->ValueAt(i));
+  }
+
+  // insert one more value for key "1~9"
+  for (unsigned i = 0; i < 10; i++) {
+    if(i == 0) {
+      EXPECT_FALSE(bucket_page->Insert(i, 2 * i, IntComparator()));
+    } else{
+      EXPECT_TRUE(bucket_page->Insert(i, 2 * i, IntComparator()));
+    }
+    EXPECT_FALSE(bucket_page->Insert(i, 2 * i, IntComparator()));
+  }
+
+  // check for duplicate key
+  for (int i = 1; i < 10; i++) {
+    std::vector<int> res;
+    bucket_page->GetValue(i, IntComparator(), &res);
+    EXPECT_EQ(2, res.size());
+    if (res[0] == i) {
+      EXPECT_EQ(2 * i, res[1]);
+    } else {
+      EXPECT_EQ(2 * i, res[0]);
+      EXPECT_EQ(i, res[1]);
+    }
+  }
+  {
+    std::vector<int> res;
+    bucket_page->GetValue(0, IntComparator(), &res);
+    EXPECT_EQ(1, res.size());
+    EXPECT_EQ(0, res[0]);
   }
 
   // unpin the directory page now that we are done

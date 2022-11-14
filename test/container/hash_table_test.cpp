@@ -22,6 +22,7 @@
 namespace bustub {
 
 // NOLINTNEXTLINE
+static int ht_verify_seq = 0;
 
 // NOLINTNEXTLINE
 TEST(HashTableTest, /*DISABLED_*/ SampleTest) {
@@ -39,6 +40,7 @@ TEST(HashTableTest, /*DISABLED_*/ SampleTest) {
   }
 
   ht.VerifyIntegrity();
+  LOG_DEBUG("ht_verify_seq: %d", ++ht_verify_seq);
 
   // check if the inserted values are all there
   for (int i = 0; i < 5; i++) {
@@ -49,6 +51,7 @@ TEST(HashTableTest, /*DISABLED_*/ SampleTest) {
   }
 
   ht.VerifyIntegrity();
+  LOG_DEBUG("ht_verify_seq: %d", ++ht_verify_seq);
 
   // insert one more value for each key
   for (int i = 0; i < 5; i++) {
@@ -58,7 +61,7 @@ TEST(HashTableTest, /*DISABLED_*/ SampleTest) {
     } else {
       EXPECT_TRUE(ht.Insert(nullptr, i, 2 * i));
     }
-    ht.Insert(nullptr, i, 2 * i);
+    EXPECT_FALSE(ht.Insert(nullptr, i, 2 * i));
     std::vector<int> res;
     ht.GetValue(nullptr, i, &res);
     if (i == 0) {
@@ -77,6 +80,7 @@ TEST(HashTableTest, /*DISABLED_*/ SampleTest) {
   }
 
   ht.VerifyIntegrity();
+  LOG_DEBUG("ht_verify_seq: %d", ++ht_verify_seq);
 
   // look for a key that does not exist
   {
@@ -100,6 +104,7 @@ TEST(HashTableTest, /*DISABLED_*/ SampleTest) {
   }
 
   ht.VerifyIntegrity();
+  LOG_DEBUG("ht_verify_seq: %d", ++ht_verify_seq);
 
   // delete all values
   for (int i = 0; i < 5; i++) {
@@ -112,6 +117,7 @@ TEST(HashTableTest, /*DISABLED_*/ SampleTest) {
   }
 
   ht.VerifyIntegrity();
+  LOG_DEBUG("ht_verify_seq: %d", ++ht_verify_seq);
 
   disk_manager->ShutDown();
   remove("test.db");

@@ -29,16 +29,19 @@ auto HASH_TABLE_BUCKET_TYPE::GetValue(KeyType key, KeyComparator cmp, std::vecto
 
 template <typename KeyType, typename ValueType, typename KeyComparator>
 auto HASH_TABLE_BUCKET_TYPE::Insert(KeyType key, ValueType value, KeyComparator cmp) -> bool {
+  std::vector<ValueType> found;
+  GetValue(key, cmp, &found);
+  for (const auto &v : found) {
+    if(value == v) return false;  // false if duplicate
+  }
   uint32_t i = 0;
   for (; i < BUCKET_ARRAY_SIZE && IsOccupied(i); ++i) {
   }
-  if (i == BUCKET_ARRAY_SIZE) return false;  // full
+  if (i == BUCKET_ARRAY_SIZE) return false;  // false if full
   array_[i] = {key, value};
   SetOccupied(i);
   SetReadable(i);
-  std::vector<ValueType> found;
-  GetValue(key, cmp, &found);
-  return std::count(found.begin(), found.end(), value) == 1;  // false if duplicate
+  return true;
 }
 
 template <typename KeyType, typename ValueType, typename KeyComparator>
