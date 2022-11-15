@@ -14,6 +14,7 @@
 
 #include <memory>
 #include <utility>
+#include <unordered_set>
 
 #include "execution/executors/abstract_executor.h"
 #include "execution/plans/distinct_plan.h"
@@ -53,5 +54,7 @@ class DistinctExecutor : public AbstractExecutor {
   const DistinctPlanNode *plan_;
   /** The child executor from which tuples are obtained */
   std::unique_ptr<AbstractExecutor> child_executor_;
+  /** Set of DistinctKey for all columns */
+  std::unordered_set<DistinctKey> key_set_;
 };
 }  // namespace bustub

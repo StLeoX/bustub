@@ -50,5 +50,15 @@ class SeqScanExecutor : public AbstractExecutor {
  private:
   /** The sequential scan plan node to be executed */
   const SeqScanPlanNode *plan_;
+  /** table meta info */
+  TableInfo *table_info_;
+  /** iteration deps, set in `Init` */
+  TableIterator cur_;
+  TableIterator end_;
+  std::vector<uint32_t> schema_idx_array_;
+  /** Since `SeqScanPlanNode` is downcasted from `AbstractPlanNode`, the `plan_.predicate` might be NULL.
+   * So we might new a const-predicate, which stands for "alwoys true".
+   */
+  std::unique_ptr<const AbstractExpression> predicate_;
 };
 }  // namespace bustub

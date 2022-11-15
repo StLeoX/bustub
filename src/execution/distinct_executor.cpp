@@ -16,10 +16,25 @@ namespace bustub {
 
 DistinctExecutor::DistinctExecutor(ExecutorContext *exec_ctx, const DistinctPlanNode *plan,
                                    std::unique_ptr<AbstractExecutor> &&child_executor)
-    : AbstractExecutor(exec_ctx) {}
+    : AbstractExecutor(exec_ctx), plan_(plan), child_executor_(std::move(child_executor)) {}
 
-void DistinctExecutor::Init() {}
+void DistinctExecutor::Init() {
+  key_set_.clear();
+  child_executor_->Init();
+}
 
-auto DistinctExecutor::Next(Tuple *tuple, RID *rid) -> bool { return false; }
+auto DistinctExecutor::Next(Tuple *tuple, RID *rid) -> bool {
+  while (child_executor_->Next(tuple, rid)) {
+    DistinctKey key;
+    for (uint32_t i = 0; i < plan_->OutputSchema()->GetColumnCount(); ++i) {
+      key.group_bys_.push_back(tuple->GetValue(plan_->OutputSchema(), i));
+    }
+    if(key_set_.count(key) <= 0) {
+      key_set_.insert(std::move(key));
+      return true;
+    }
+  }
+  return false;
+}
 
 }  // namespace bustub

@@ -116,7 +116,9 @@ struct AggregateKey {
   }
 };
 
-/** AggregateValue represents a value for each of the running aggregates */
+/** AggregateValue represents values for each of the running aggregates
+ * For example, if there exists `group by` clause, one `AggregateValue` matches one group.
+ * */
 struct AggregateValue {
   /** The aggregate values */
   std::vector<Value> aggregates_;

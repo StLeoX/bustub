@@ -293,9 +293,10 @@ class Trie {
       return true;
     } else {
       // terminal node exists
-      cur = cur->GetChildNode(key[n - 1])->get();
+      auto cur_up = cur->GetChildNode(key[n - 1]);
+      cur = cur_up->get();
       if (!cur->IsEndNode()) {
-        cur = new TrieNodeWithValue<T>(std::move(*cur), value);
+        cur_up->reset(new TrieNodeWithValue<T>(std::move(*cur), value));
         latch_.WUnlock();
         return true;
       } else {

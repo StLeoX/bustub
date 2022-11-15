@@ -13,12 +13,14 @@
 #pragma once
 
 #include <memory>
+#include <unordered_map>
 #include <utility>
 
 #include "execution/executor_context.h"
 #include "execution/executors/abstract_executor.h"
 #include "execution/plans/hash_join_plan.h"
 #include "storage/table/tuple.h"
+#include "type/value_hash.h"
 
 namespace bustub {
 
@@ -54,6 +56,29 @@ class HashJoinExecutor : public AbstractExecutor {
  private:
   /** The NestedLoopJoin plan node to be executed. */
   const HashJoinPlanNode *plan_;
+  /** children */
+  std::unique_ptr<AbstractExecutor> left_executor_;   // outer relation
+  std::unique_ptr<AbstractExecutor> right_executor_;  // inner relation
+  // define the comparable JoinKey
+  using HashedJoinKey = HashedValue;
+  using JoinKey = Value;
+  /** store pretable for Next results
+   * using "Late Materialization" strategy, i.e. fetch values in `Next`
+   * idx - JoinKey - Tuple.Values
+   */
+  using VJT = std::vector<std::pair<JoinKey, Tuple>>; 
+  VJT left_table_; // for double check
+  VJT right_table_;
+  // for inner, traverse VJT
+  VJT::iterator right_it_;
+
+  /** bind Tuple with comparable HashedJoinKey
+   * one hjk might map to multi idx
+   */
+  using MHV = std::unordered_map<HashedJoinKey, std::vector<size_t>>; // map: hjk -> [pretable.idx]
+  MHV left_ht_;
+  MHV::iterator left_it_;
+
 };
 
 }  // namespace bustub

@@ -87,7 +87,8 @@ using ComparatorType = GenericComparator<8>;
 using HashFunctionType = HashFunction<KeyType>;
 
 // SELECT col_a, col_b FROM test_1 WHERE col_a < 500
-TEST_F(ExecutorTest, DISABLED_SimpleSeqScanTest) {
+// deb(ASan) heap-use-after-free
+TEST_F(ExecutorTest, /*DISABLED_*/ SimpleSeqScanTest) {
   // Construct query plan
   TableInfo *table_info = GetExecutorContext()->GetCatalog()->GetTable("test_1");
   const Schema &schema = table_info->schema_;
@@ -104,14 +105,22 @@ TEST_F(ExecutorTest, DISABLED_SimpleSeqScanTest) {
 
   // Verify
   ASSERT_EQ(result_set.size(), 500);
+
+  auto col_a_idx = out_schema->GetColIdx("colA");
+  LOG_DEBUG("col_a_idx is %d", col_a_idx);
   for (const auto &tuple : result_set) {
-    ASSERT_TRUE(tuple.GetValue(out_schema, out_schema->GetColIdx("colA")).GetAs<int32_t>() < 500);
-    ASSERT_TRUE(tuple.GetValue(out_schema, out_schema->GetColIdx("colB")).GetAs<int32_t>() < 10);
+    ASSERT_TRUE(tuple.GetValue(out_schema, col_a_idx).GetAs<int32_t>() < 500);
+  }
+
+  auto col_b_idx = out_schema->GetColIdx("colB");
+  LOG_DEBUG("col_b_idx is %d", col_b_idx);
+  for (const auto &tuple : result_set) {
+    ASSERT_TRUE(tuple.GetValue(out_schema, col_b_idx).GetAs<int32_t>() < 10);
   }
 }
 
 // INSERT INTO empty_table2 VALUES (100, 10), (101, 11), (102, 12)
-TEST_F(ExecutorTest, DISABLED_SimpleRawInsertTest) {
+TEST_F(ExecutorTest, /*DISABLED_*/ SimpleRawInsertTest) {
   // Create Values to insert
   std::vector<Value> val1{ValueFactory::GetIntegerValue(100), ValueFactory::GetIntegerValue(10)};
   std::vector<Value> val2{ValueFactory::GetIntegerValue(101), ValueFactory::GetIntegerValue(11)};
@@ -153,7 +162,8 @@ TEST_F(ExecutorTest, DISABLED_SimpleRawInsertTest) {
 }
 
 // INSERT INTO empty_table2 SELECT col_a, col_b FROM test_1 WHERE col_a < 500
-TEST_F(ExecutorTest, DISABLED_SimpleSelectInsertTest) {
+// deb(ASan) heap-use-after-free, caused by `Seq_scan`
+TEST_F(ExecutorTest, /*DISABLED_*/ SimpleSelectInsertTest) {
   const Schema *out_schema1;
   std::unique_ptr<AbstractPlanNode> scan_plan1;
   {
@@ -205,7 +215,7 @@ TEST_F(ExecutorTest, DISABLED_SimpleSelectInsertTest) {
 }
 
 // INSERT INTO empty_table2 VALUES (100, 10), (101, 11), (102, 12)
-TEST_F(ExecutorTest, DISABLED_SimpleRawInsertWithIndexTest) {
+TEST_F(ExecutorTest, /*DISABLED_*/ SimpleRawInsertWithIndexTest) {
   // Create Values to insert
   std::vector<Value> val1{ValueFactory::GetIntegerValue(100), ValueFactory::GetIntegerValue(10)};
   std::vector<Value> val2{ValueFactory::GetIntegerValue(101), ValueFactory::GetIntegerValue(11)};
@@ -270,7 +280,7 @@ TEST_F(ExecutorTest, DISABLED_SimpleRawInsertWithIndexTest) {
 }
 
 // UPDATE test_3 SET colB = colB + 1;
-TEST_F(ExecutorTest, DISABLED_SimpleUpdateTest) {
+TEST_F(ExecutorTest, /*DISABLED_*/ SimpleUpdateTest) {
   // Construct a sequential scan of the table
   const Schema *out_schema{};
   std::unique_ptr<AbstractPlanNode> scan_plan{};
@@ -329,7 +339,8 @@ TEST_F(ExecutorTest, DISABLED_SimpleUpdateTest) {
 }
 
 // DELETE FROM test_1 WHERE col_a == 50;
-TEST_F(ExecutorTest, DISABLED_SimpleDeleteTest) {
+// deb() won't terminal
+TEST_F(ExecutorTest, /*DISABLED_*/ SimpleDeleteTest) {
   // Construct query plan
   auto table_info = GetExecutorContext()->GetCatalog()->GetTable("test_1");
   auto &schema = table_info->schema_;
@@ -374,7 +385,8 @@ TEST_F(ExecutorTest, DISABLED_SimpleDeleteTest) {
 }
 
 // SELECT test_1.col_a, test_1.col_b, test_2.col1, test_2.col3 FROM test_1 JOIN test_2 ON test_1.col_a = test_2.col1;
-TEST_F(ExecutorTest, DISABLED_SimpleNestedLoopJoinTest) {
+// deb(assert) values.size() != schema->GetColumnCount()
+TEST_F(ExecutorTest, /*DISABLED_*/ SimpleNestedLoopJoinTest) {
   const Schema *out_schema1;
   std::unique_ptr<AbstractPlanNode> scan_plan1;
   {
@@ -418,7 +430,8 @@ TEST_F(ExecutorTest, DISABLED_SimpleNestedLoopJoinTest) {
 }
 
 // SELECT test_4.colA, test_4.colB, test_6.colA, test_6.colB FROM test_4 JOIN test_6 ON test_4.colA = test_6.colA;
-TEST_F(ExecutorTest, DISABLED_SimpleHashJoinTest) {
+// deb()
+TEST_F(ExecutorTest, /*DISABLED_*/ SimpleHashJoinTest) {
   // Construct sequential scan of table test_4
   const Schema *out_schema1{};
   std::unique_ptr<AbstractPlanNode> scan_plan1{};
@@ -487,7 +500,7 @@ TEST_F(ExecutorTest, DISABLED_SimpleHashJoinTest) {
 }
 
 // SELECT COUNT(col_a), SUM(col_a), min(col_a), max(col_a) from test_1;
-TEST_F(ExecutorTest, DISABLED_SimpleAggregationTest) {
+TEST_F(ExecutorTest, /*DISABLED_*/ SimpleAggregationTest) {
   const Schema *scan_schema;
   std::unique_ptr<AbstractPlanNode> scan_plan;
   {
@@ -537,7 +550,7 @@ TEST_F(ExecutorTest, DISABLED_SimpleAggregationTest) {
 }
 
 // SELECT count(col_a), col_b, sum(col_c) FROM test_1 Group By col_b HAVING count(col_a) > 100
-TEST_F(ExecutorTest, DISABLED_SimpleGroupByAggregation) {
+TEST_F(ExecutorTest, /*DISABLED_*/ SimpleGroupByAggregation) {
   const Schema *scan_schema;
   std::unique_ptr<AbstractPlanNode> scan_plan;
   {
@@ -594,7 +607,8 @@ TEST_F(ExecutorTest, DISABLED_SimpleGroupByAggregation) {
 }
 
 // SELECT colA, colB FROM test_3 LIMIT 10
-TEST_F(ExecutorTest, DISABLED_SimpleLimitTest) {
+// deb()
+TEST_F(ExecutorTest, /*DISABLED_*/ SimpleLimitTest) {
   auto *table_info = GetExecutorContext()->GetCatalog()->GetTable("test_3");
   auto &schema = table_info->schema_;
 
@@ -622,7 +636,7 @@ TEST_F(ExecutorTest, DISABLED_SimpleLimitTest) {
 }
 
 // SELECT DISTINCT colC FROM test_7
-TEST_F(ExecutorTest, DISABLED_SimpleDistinctTest) {
+TEST_F(ExecutorTest, /*DISABLED_*/ SimpleDistinctTest) {
   auto *table_info = GetExecutorContext()->GetCatalog()->GetTable("test_7");
   auto &schema = table_info->schema_;
 

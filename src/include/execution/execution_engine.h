@@ -65,7 +65,7 @@ class ExecutionEngine {
         }
       }
     } catch (Exception &e) {
-      // TODO(student): handle exceptions
+      LOG_ERROR("At ExecutionEngine::Execute, %s", e.what());
     }
 
     return true;
