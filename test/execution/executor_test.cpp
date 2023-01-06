@@ -87,7 +87,6 @@ using ComparatorType = GenericComparator<8>;
 using HashFunctionType = HashFunction<KeyType>;
 
 // SELECT col_a, col_b FROM test_1 WHERE col_a < 500
-// deb(ASan) heap-use-after-free
 TEST_F(ExecutorTest, /*DISABLED_*/ SimpleSeqScanTest) {
   // Construct query plan
   TableInfo *table_info = GetExecutorContext()->GetCatalog()->GetTable("test_1");
@@ -162,7 +161,6 @@ TEST_F(ExecutorTest, /*DISABLED_*/ SimpleRawInsertTest) {
 }
 
 // INSERT INTO empty_table2 SELECT col_a, col_b FROM test_1 WHERE col_a < 500
-// deb(ASan) heap-use-after-free, caused by `Seq_scan`
 TEST_F(ExecutorTest, /*DISABLED_*/ SimpleSelectInsertTest) {
   const Schema *out_schema1;
   std::unique_ptr<AbstractPlanNode> scan_plan1;
@@ -322,6 +320,7 @@ TEST_F(ExecutorTest, /*DISABLED_*/ SimpleUpdateTest) {
   GetExecutionEngine()->Execute(update_plan.get(), &result_set, GetTxn(), GetExecutorContext());
 
   // UpdateExecutor should not modify the result set
+  // BDD: 根据此处的行为，update不应该返回结果集。
   ASSERT_EQ(result_set.size(), 0);
   result_set.clear();
 
@@ -339,7 +338,7 @@ TEST_F(ExecutorTest, /*DISABLED_*/ SimpleUpdateTest) {
 }
 
 // DELETE FROM test_1 WHERE col_a == 50;
-// deb() won't terminal
+// deb() at `CreateIndex`, caused by EHT index.
 TEST_F(ExecutorTest, /*DISABLED_*/ SimpleDeleteTest) {
   // Construct query plan
   auto table_info = GetExecutorContext()->GetCatalog()->GetTable("test_1");
@@ -356,6 +355,7 @@ TEST_F(ExecutorTest, /*DISABLED_*/ SimpleDeleteTest) {
   auto *index_info = GetExecutorContext()->GetCatalog()->CreateIndex<KeyType, ValueType, ComparatorType>(
       GetTxn(), "index1", "test_1", GetExecutorContext()->GetCatalog()->GetTable("test_1")->schema_, *key_schema, {0},
       8, HashFunctionType{});
+  LOG_DEBUG("build the index on test_1");
 
   std::vector<Tuple> result_set;
   GetExecutionEngine()->Execute(scan_plan1.get(), &result_set, GetTxn(), GetExecutorContext());
@@ -368,8 +368,7 @@ TEST_F(ExecutorTest, /*DISABLED_*/ SimpleDeleteTest) {
 
   // DELETE FROM test_1 WHERE col_a == 50
   const Tuple index_key = Tuple(result_set[0]);
-  std::unique_ptr<AbstractPlanNode> delete_plan;
-  { delete_plan = std::make_unique<DeletePlanNode>(scan_plan1.get(), table_info->oid_); }
+  std::unique_ptr<AbstractPlanNode> delete_plan = std::make_unique<DeletePlanNode>(scan_plan1.get(), table_info->oid_);
   GetExecutionEngine()->Execute(delete_plan.get(), nullptr, GetTxn(), GetExecutorContext());
 
   result_set.clear();
@@ -430,7 +429,7 @@ TEST_F(ExecutorTest, /*DISABLED_*/ SimpleNestedLoopJoinTest) {
 }
 
 // SELECT test_4.colA, test_4.colB, test_6.colA, test_6.colB FROM test_4 JOIN test_6 ON test_4.colA = test_6.colA;
-// deb()
+// deb() the same as Index
 TEST_F(ExecutorTest, /*DISABLED_*/ SimpleHashJoinTest) {
   // Construct sequential scan of table test_4
   const Schema *out_schema1{};
@@ -530,6 +529,8 @@ TEST_F(ExecutorTest, /*DISABLED_*/ SimpleAggregationTest) {
   std::vector<Tuple> result_set{};
   GetExecutionEngine()->Execute(agg_plan.get(), &result_set, GetTxn(), GetExecutorContext());
 
+  ASSERT_EQ(result_set.size(), 1);
+
   auto count_a_val = result_set[0].GetValue(agg_schema, agg_schema->GetColIdx("count_a")).GetAs<int32_t>();
   auto sum_a_val = result_set[0].GetValue(agg_schema, agg_schema->GetColIdx("sum_a")).GetAs<int32_t>();
   auto min_a_val = result_set[0].GetValue(agg_schema, agg_schema->GetColIdx("min_a")).GetAs<int32_t>();
@@ -546,7 +547,6 @@ TEST_F(ExecutorTest, /*DISABLED_*/ SimpleAggregationTest) {
 
   // Maximum should be TEST1_SIZE - 1
   ASSERT_EQ(max_a_val, TEST1_SIZE - 1);
-  ASSERT_EQ(result_set.size(), 1);
 }
 
 // SELECT count(col_a), col_b, sum(col_c) FROM test_1 Group By col_b HAVING count(col_a) > 100

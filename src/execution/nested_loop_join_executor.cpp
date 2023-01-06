@@ -31,10 +31,10 @@ NestedLoopJoinExecutor::NestedLoopJoinExecutor(ExecutorContext *exec_ctx, const 
       plan_(plan),
       left_executor_(std::move(left_executor)),
       right_executor_(std::move(right_executor)) {
-  if (plan_->Predicate() != nullptr)
-    predicate_.reset(plan_->Predicate());
+  if (auto predicate = plan_->Predicate(); predicate != nullptr)
+    predicate_ = predicate;
   else
-    predicate_.reset(new ConstantValueExpression(ValueFactory::GetBooleanValue(true)));
+    predicate_ = new ConstantValueExpression(ValueFactory::GetBooleanValue(true));
 }
 
 void NestedLoopJoinExecutor::Init() {
@@ -71,7 +71,9 @@ auto NestedLoopJoinExecutor::Next(Tuple *tuple, RID *rid) -> bool {
         return true;
       }  // if
     }
-    right_executor_->Init();  // reset inner loop
+    // deb
+    // reset inner loop
+    right_executor_->Init();
   }
   return false;
 }

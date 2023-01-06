@@ -23,10 +23,10 @@ SeqScanExecutor::SeqScanExecutor(ExecutorContext *exec_ctx, const SeqScanPlanNod
       end_{nullptr, RID(), nullptr},
       schema_idx_array_() {
   table_info_ = exec_ctx->GetCatalog()->GetTable(plan_->GetTableOid());
-  if (plan_->GetPredicate() != nullptr)
-    predicate_.reset(plan_->GetPredicate());
+  if (auto predicate = plan_->GetPredicate(); predicate != nullptr)
+    predicate_ = predicate;
   else
-    predicate_.reset(new ConstantValueExpression(ValueFactory::GetBooleanValue(true)));
+    predicate_ = new ConstantValueExpression(ValueFactory::GetBooleanValue(true));
 }
 
 void SeqScanExecutor::Init() {

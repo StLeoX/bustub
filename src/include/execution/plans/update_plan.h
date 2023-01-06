@@ -45,7 +45,9 @@ class UpdatePlanNode : public AbstractPlanNode {
    */
   UpdatePlanNode(const AbstractPlanNode *child, table_oid_t table_oid,
                  std::unordered_map<uint32_t, UpdateInfo> update_attrs)
-      : AbstractPlanNode(nullptr, {child}), table_oid_{table_oid}, update_attrs_{std::move(update_attrs)} {}
+      : AbstractPlanNode(nullptr, {child}), table_oid_{table_oid}, update_attrs_{std::move(update_attrs)} {
+    need_result_ = false;
+  }
 
   /** @return The type of the plan node */
   auto GetType() const -> PlanType override { return PlanType::Update; }

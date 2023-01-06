@@ -58,8 +58,7 @@ class NestedLoopJoinExecutor : public AbstractExecutor {
   /** children */
   std::unique_ptr<AbstractExecutor> left_executor_;   // outer relation
   std::unique_ptr<AbstractExecutor> right_executor_;  // inner relation
-  /** boxed predicate */
-  std::unique_ptr<const AbstractExpression> predicate_;
+  const AbstractExpression* predicate_;
 };
 
 }  // namespace bustub

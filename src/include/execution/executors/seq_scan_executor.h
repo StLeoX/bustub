@@ -59,6 +59,6 @@ class SeqScanExecutor : public AbstractExecutor {
   /** Since `SeqScanPlanNode` is downcasted from `AbstractPlanNode`, the `plan_.predicate` might be NULL.
    * So we might new a const-predicate, which stands for "alwoys true".
    */
-  std::unique_ptr<const AbstractExpression> predicate_;
+  const AbstractExpression* predicate_;
 };
 }  // namespace bustub

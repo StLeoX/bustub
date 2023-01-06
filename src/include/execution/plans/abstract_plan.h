@@ -51,7 +51,7 @@ class AbstractPlanNode {
    * @param children the children of this plan node
    */
   AbstractPlanNode(const Schema *output_schema, std::vector<const AbstractPlanNode *> &&children)
-      : output_schema_(output_schema), children_(std::move(children)) {}
+      : need_result_(true), output_schema_(output_schema), children_(std::move(children)) {}
 
   /** Virtual destructor. */
   virtual ~AbstractPlanNode() = default;
@@ -73,12 +73,19 @@ class AbstractPlanNode {
     return fmt::format("{} | {}\n{}", PlanNodeToString(), output_schema_->ToString(), ChildrenToString(2));
   }
 
+  /// Whether this plan need to retrieve the result_set.
+  auto NeedResult() const -> bool { return need_result_; }
+
  protected:
   /** @return the string representation of the plan node itself */
   virtual auto PlanNodeToString() const -> std::string { return "<unknown>"; }
 
   /** @return the string representation of the plan node's children */
   auto ChildrenToString(int indent) const -> std::string;
+
+  // Whether this plan need to retrieve the result_set.
+  // e.g. the `UpdatePlan` doesn't need it, returning an empty result_set.
+  bool need_result_;
 
  private:
   /**
