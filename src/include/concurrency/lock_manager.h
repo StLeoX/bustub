@@ -46,9 +46,18 @@ class LockManager {
 
   class LockRequestQueue {
    public:
+    void insert(LockRequest request) { request_queue_.emplace_back(request); }
+
+    auto find(txn_id_t txn_id) -> LockRequest *;
+
+    auto remove(txn_id_t txn_id) -> LockRequest;
+
+   public:
     std::list<LockRequest> request_queue_;
     // for notifying blocked transactions on this rid
     std::condition_variable cv_;
+    bool waiting_;
+    int refcount_;
     // txn_id of an upgrading transaction (if any)
     txn_id_t upgrading_ = INVALID_TXN_ID;
   };
@@ -104,11 +113,18 @@ class LockManager {
    */
   auto Unlock(Transaction *txn, const RID &rid) -> bool;
 
+  /**
+   * Check and transfer request_queue internel states.
+   */
+  auto Prevent(txn_id_t txn_id, LockRequestQueue &&request_queue) -> void;
+
  private:
   std::mutex latch_;
 
   /** Lock table for lock requests. */
   std::unordered_map<RID, LockRequestQueue> lock_table_;
+  /** global id-txn map */
+  std::unordered_map<txn_id_t, Transaction *> id_txn_;
 };
 
 }  // namespace bustub

@@ -144,8 +144,7 @@ class TransactionAbortException : public std::exception {
       case AbortReason::LOCKSHARED_ON_READ_UNCOMMITTED:
         return "Transaction " + std::to_string(txn_id_) + " aborted on lockshared on READ_UNCOMMITTED\n";
     }
-    // Todo: Should fail with unreachable.
-    return "";
+    UNREACHABLE("");
   }
 };
 
