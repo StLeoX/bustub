@@ -111,7 +111,7 @@ auto LockManager::LockUpgrade(Transaction *txn, const RID &rid) -> bool {
   }
 
   LockRequestQueue &rq = lock_table_.find(rid)->second;
-  if (rq.upgrading_) {
+  if (rq.upgrading_ != INVALID_TXN_ID) {
     txn->SetState(TransactionState::ABORTED);
     throw TransactionAbortException(txn_id, AbortReason::UPGRADE_CONFLICT);
   }
@@ -126,7 +126,7 @@ auto LockManager::LockUpgrade(Transaction *txn, const RID &rid) -> bool {
   // deadlock prevent
   if (rq.waiting_ || rq.refcount_ > 0) {
     Prevent(txn_id, std::move(rq));
-    rq.upgrading_ = true;
+    rq.upgrading_ = txn_id;
     rq.cv_.wait(lock, [&]() -> bool {
       return txn->GetState() == TransactionState::ABORTED || (!rq.waiting_ && rq.refcount_ == 0);
     });
@@ -137,7 +137,7 @@ auto LockManager::LockUpgrade(Transaction *txn, const RID &rid) -> bool {
   }
 
   txn->GetExclusiveLockSet()->emplace(rid);
-  rq.upgrading_ = false;
+  rq.upgrading_ = INVALID_TXN_ID;
   rq.waiting_ = true;
   rq.find(txn_id)->granted_ = true;
 
@@ -174,7 +174,8 @@ auto LockManager::Unlock(Transaction *txn, const RID &rid) -> bool {
 
 auto LockManager::Prevent(txn_id_t txn_id, LockRequestQueue &&request_queue) -> void {
   for (const auto &request : request_queue.request_queue_) {
-    if (request.granted_ && request.txn_id_ == txn_id) {
+    // granted and later
+    if (request.granted_ && request.txn_id_ > txn_id) {
       id_txn_[request.txn_id_]->SetState(TransactionState::ABORTED);
       if (request.lock_mode_ == LockMode::SHARED) {
         request_queue.refcount_--;
